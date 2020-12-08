@@ -1,6 +1,7 @@
 import React from 'react';
 import './Newsfeed.css';
 import LineGraph from './LineGraph.js';
+import TimeLine from './TimeLine.js';
 
 export default function Newsfeed() {
     return (
@@ -13,6 +14,7 @@ export default function Newsfeed() {
                     </div>
                     <div className="newsfeed__chart">
                         <LineGraph />
+                        <TimeLine />
                     </div>
                 </div>
             </div>
