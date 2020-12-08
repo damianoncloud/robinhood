@@ -2,14 +2,44 @@ import React, { useState, useEffect } from 'react';
 import './Stats.css';
 import axios from "axios";
 import StatsRow from './StatsRow.js';
+import { db } from './firebase';
 
 const TOKEN = "bv54t5f48v6qnllcpstg";
-const BASE_URL= 'https://finnhub.io/api/v1/quote';
+const BASE_URL = 'https://finnhub.io/api/v1/quote';
+
+
+
 
 export default function Stats() {
-    
+
     const [stockData, setStockData] = useState([]);
-    const [myStocks, setmyStocks] = useState([]);
+    const [myStocks, setMyStocks] = useState([]);
+
+    const getMyStocks = () => {
+        db
+            .collection('myStocks')
+            .onSnapshot(snapshot => {
+
+                let promises = [];
+                let tempData = []
+                snapshot.docs.map((doc) => {
+
+                    promises.push(getStocksData(doc.data().ticker)
+                        .then(res => {
+                            tempData.push({
+                                id: doc.id,
+                                data: doc.data(),
+                                info: res.data
+                            })
+                        })
+                    )
+                })
+                Promise.all(promises).then(() => {
+                    setMyStocks(tempData);
+                })
+            })
+    }
+
 
     const getStocksData = (stock) => {
         return axios
@@ -23,44 +53,53 @@ export default function Stats() {
         let tempStocksData = [];
         const stocksList = ["AAPL", "MSFT", "TSLA", "FB", "BABA", "UBER", "DIS", "SBUX"];
         let promises = [];
+        getMyStocks();
         stocksList.map((stock) => {
-          promises.push(
-            getStocksData(stock)
-            .then((res) => {
-                tempStocksData.push({
-                    name: stock,
-                    ...res.data
-                });
-            })
-          )
+            promises.push(
+                getStocksData(stock)
+                    .then((res) => {
+                        tempStocksData.push({
+                            name: stock,
+                            ...res.data
+                        });
+                    })
+            )
         });
 
-        Promise.all(promises).then(()=>{
+        Promise.all(promises).then(() => {
             setStockData(tempStocksData);
-            console.log(tempStocksData)
-          })
+        })
     }, [])
 
 
     return (
         <div className="stats">
-            <div className="stats__container"> 
+            <div className="stats__container">
                 <div className="stats__header">
                     <p>Stocks</p>
                 </div>
                 <div className="stats__content">
                     <div className="stats__rows">
                         {/* for our current stocks */}
+                        {myStocks.map((stock) => (
+                            <StatsRow
+                                key={stock.data.ticker}
+                                name={stock.data.ticker}
+                                openPrice={stock.info.o}
+                                shares={stock.data.shares}
+                                price={stock.info.c}
+                            />
+                        ))}
                     </div>
                 </div>
-                <div className="stats__header">
+                <div className="stats__header stats__lists">
                     <p>Lists</p>
                 </div>
                 <div className="stats__content">
                     <div className="stats__rows">
                         {/* stocks we can buy */}
                         {stockData.map((stock) => (
-                            <StatsRow 
+                            <StatsRow
                                 key={stock.name}
                                 name={stock.name}
                                 openPrice={stock.o}
